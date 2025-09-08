@@ -14,6 +14,11 @@
 
 이 프로젝트는 단순한 경로 추천을 넘어, **사용자가 산책을 통해 감성적인 위로와 치유를 경험**하게 하는 것을 목표로 합니다.  
 
+
+---
+[![Vibe Street 서비스 시연 영상](img/main.png)](https://youtu.be/JdlKQr_XLyU)
+
+
 ---
 
 ## ✨ 주요 기능 (Core Features)
