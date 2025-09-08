@@ -16,7 +16,14 @@
 
 
 ---
-[![Vibe Street 서비스 시연 영상](img/main.png)](https://youtu.be/JdlKQr_XLyU)
+**구현 영상**
+이미지를 클릭하면 구현 영상 페이지로 이동합니다.
+
+<a href="https://youtu.be/JdlKQr_XLyU" target="_blank">
+  <img src="img/main.png" alt="Vibe Street 서비스 시연 영상" width="600">
+</a>
+
+*(이미지를 클릭하면 YouTube에서 전체 영상을 시청할 수 있습니다.)*
 
 
 ---
