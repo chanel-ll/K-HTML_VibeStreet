@@ -1,0 +1,127 @@
+/* 지도 오버레이 스타일 */
+.trail-map-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.trail-map-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 800px;
+  overflow: hidden;
+}
+
+.trail-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.trail-map-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.trail-map-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.trail-map-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.trail-map {
+  width: 100%;
+  height: 500px;
+}
+
+.trail-map-legend {
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.legend-marker {
+  font-size: 16px;
+}
+
+.legend-marker.user {
+  color: #ff4444;
+}
+
+.legend-marker.trail {
+  color: #4285f4;
+}
+
+.legend-note {
+  margin-left: auto;
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .trail-map-overlay {
+    padding: 10px;
+  }
+  
+  .trail-map-container {
+    width: 100%;
+    height: 90vh;
+  }
+  
+  .trail-map {
+    height: 400px;
+  }
+  
+  .trail-map-legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .legend-note {
+    margin-left: 0;
+  }
+}

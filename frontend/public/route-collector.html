@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>산책로 루트 수집기</title>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=39b1c3de3df8e86c8abdd3853ac4effe&libraries=services"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .header {
+            background: #4285f4;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .controls {
+            padding: 15px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-start { background: #4CAF50; color: white; }
+        .btn-stop { background: #f44336; color: white; }
+        .btn-clear { background: #ff9800; color: white; }
+        .btn-copy { background: #2196F3; color: white; }
+        
+        #map {
+            width: 100%;
+            height: 500px;
+        }
+        
+        .output {
+            padding: 15px;
+            background: #f9f9f9;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .coords-output {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ 산책로 루트 좌표 수집기</h1>
+        <p>지도를 클릭하여 산책로 경로의 좌표를 수집하세요</p>
+    </div>
+    
+    <div class="controls">
+        <div class="search-section">
+            <input type="text" id="searchInput" placeholder="주소나 장소명을 입력하세요 (예: 경춘선숲길, 서울시 동대문구 회기동)" 
+                   style="width: 400px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+            <button id="searchBtn" class="btn" style="background: #9C27B0; color: white;">🔍 검색</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <button id="startBtn" class="btn btn-start">🚀 수집 시작</button>
+            <button id="stopBtn" class="btn btn-stop" disabled>⏹️ 수집 중지</button>
+            <button id="clearBtn" class="btn btn-clear">🗑️ 초기화</button>
+            <button id="copyBtn" class="btn btn-copy">📋 좌표 복사</button>
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="output">
+        <div id="status" class="status">
+            수집 시작 버튼을 눌러주세요. 지도를 클릭하면 좌표가 기록됩니다.
+        </div>
+        
+        <div>
+            <strong>수집된 좌표 (<span id="coordCount">0</span>개):</strong>
+            <div id="coordsOutput" class="coords-output">좌표가 여기에 표시됩니다...</div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let map;
+        let routeCoords = [];
+        let markers = [];
+        let polyline = null;
+        let isCollecting = false;
+
+        // DOM 요소
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchInput');
+        const status = document.getElementById('status');
+        const coordsOutput = document.getElementById('coordsOutput');
+        const coordCount = document.getElementById('coordCount');
+
+        // 지도 초기화
+        function initMap() {
+            const container = document.getElementById('map');
+            const options = {
+                center: new kakao.maps.LatLng(37.5665, 126.9780), // 서울시청
+                level: 5
+            };
+            
+            map = new kakao.maps.Map(container, options);
+            
+            // 지도 클릭 이벤트
+            kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
+                if (!isCollecting) return;
+                
+                const latlng = mouseEvent.latLng;
+                const lat = latlng.getLat();
+                const lng = latlng.getLng();
+                
+                addRoutePoint(lat, lng, latlng);
+            });
+        }
+
+        // 루트 포인트 추가
+        function addRoutePoint(lat, lng, latlng) {
+            // 좌표 배열에 추가 (GeoJSON 형식: [경도, 위도])
+            routeCoords.push([lng, lat]);
+            
+            // 마커 추가
+            const marker = new kakao.maps.Marker({
+                position: latlng,
+                map: map
+            });
+            markers.push(marker);
+            
+            // 폴리라인 업데이트
+            updatePolyline();
+            
+            // UI 업데이트
+            updateUI();
+            
+            console.log(`📍 점 ${routeCoords.length}: [${lng}, ${lat}]`);
+        }
+
+        // 폴리라인 업데이트
+        function updatePolyline() {
+            // 기존 폴리라인 제거
+            if (polyline) {
+                polyline.setMap(null);
+            }
+            
+            if (routeCoords.length < 2) return;
+            
+            // 카카오맵 좌표 배열로 변환
+            const path = routeCoords.map(coord => new kakao.maps.LatLng(coord[1], coord[0]));
+            
+            // 새 폴리라인 생성
+            polyline = new kakao.maps.Polyline({
+                path: path,
+                strokeWeight: 5,
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.8,
+                strokeStyle: 'solid'
+            });
+            
+            polyline.setMap(map);
+        }
+
+        // UI 업데이트
+        function updateUI() {
+            coordCount.textContent = routeCoords.length;
+            
+            if (routeCoords.length === 0) {
+                coordsOutput.textContent = '좌표가 여기에 표시됩니다...';
+            } else {
+                // GeoJSON 형식으로 미리보기 표시
+                const geoJsonFormat = {
+                    type: "LineString",
+                    coordinates: routeCoords
+                };
+                
+                // Firebase 호환 형식도 함께 표시
+                const firebaseFormat = {
+                    type: "LineString",
+                    coordinates: routeCoords.map((coord, index) => ({
+                        lng: coord[0],
+                        lat: coord[1],
+                        order: index
+                    }))
+                };
+                
+                const displayText = `// 📋 복사 버튼을 누르면 아래 형식들이 모두 복사됩니다
+
+// 1️⃣ GeoJSON 형식 (표준)
+${JSON.stringify(geoJsonFormat, null, 2)}
+
+// 2️⃣ Firebase 호환 형식
+${JSON.stringify(firebaseFormat, null, 2)}
+
+// 3️⃣ Python 코드
+route_data = ${JSON.stringify(geoJsonFormat, null, 2)}
+add_route_to_trail("산책로이름", route_data)`;
+                
+                coordsOutput.textContent = displayText;
+            }
+        }
+
+        // 수집 시작
+        function startCollection() {
+            isCollecting = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            status.textContent = '🟢 수집 중... 지도를 클릭하여 경로를 만드세요!';
+            status.style.background = '#c8e6c9';
+        }
+
+        // 수집 중지
+        function stopCollection() {
+            isCollecting = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            status.textContent = `✅ 수집 완료! 총 ${routeCoords.length}개의 좌표가 수집되었습니다.`;
+            status.style.background = '#e3f2fd';
+        }
+
+        // 초기화
+        function clearAll() {
+            routeCoords = [];
+            
+            // 마커 제거
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+            
+            // 폴리라인 제거
+            if (polyline) {
+                polyline.setMap(null);
+                polyline = null;
+            }
+            
+            updateUI();
+            status.textContent = '🗑️ 모든 데이터가 초기화되었습니다.';
+            status.style.background = '#fff3e0';
+        }
+
+        // 좌표 복사 (Firebase 호환 형식)
+        function copyCoords() {
+            if (routeCoords.length === 0) {
+                alert('복사할 좌표가 없습니다.');
+                return;
+            }
+            
+            // 두 가지 형식 제공
+            const geoJsonFormat = {
+                type: "LineString",
+                coordinates: routeCoords
+            };
+            
+            // Firebase 호환 객체 형식
+            const firebaseFormat = {
+                type: "LineString",
+                coordinates: routeCoords.map((coord, index) => ({
+                    lng: coord[0],
+                    lat: coord[1], 
+                    order: index
+                }))
+            };
+            
+            const output = `// GeoJSON 형식 (표준)
+${JSON.stringify(geoJsonFormat, null, 2)}
+
+// Firebase 호환 형식 (실제 사용)
+${JSON.stringify(firebaseFormat, null, 2)}
+
+// Python 코드 예시:
+route_data = ${JSON.stringify(geoJsonFormat, null, 2)}
+add_route_to_trail("산책로이름", route_data)`;
+            
+            navigator.clipboard.writeText(output).then(() => {
+                alert(`✅ ${routeCoords.length}개 좌표가 두 가지 형식으로 클립보드에 복사되었습니다!\n\n- GeoJSON 형식 (표준)\n- Firebase 호환 형식\n- Python 코드 예시`);
+            }).catch(() => {
+                // 복사 실패 시 텍스트 선택
+                const range = document.createRange();
+                range.selectNode(coordsOutput);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                alert('좌표 데이터가 선택되었습니다. Ctrl+C로 복사하세요.');
+            });
+        }
+
+        // 주소 검색 기능
+        function searchLocation() {
+            const query = searchInput.value.trim();
+            if (!query) {
+                alert('검색할 주소나 장소명을 입력해주세요.');
+                return;
+            }
+
+            status.textContent = '🔍 검색 중...';
+            status.style.background = '#fff3e0';
+
+            // 카카오맵 Places API 사용
+            const ps = new kakao.maps.services.Places();
+            
+            // 키워드로 장소 검색
+            ps.keywordSearch(query, (data, status_code) => {
+                if (status_code === kakao.maps.services.Status.OK && data.length > 0) {
+                    // 첫 번째 검색 결과 사용
+                    const place = data[0];
+                    const lat = parseFloat(place.y);
+                    const lng = parseFloat(place.x);
+                    
+                    // 지도 이동
+                    const moveLatLng = new kakao.maps.LatLng(lat, lng);
+                    map.setCenter(moveLatLng);
+                    map.setLevel(3); // 상세 레벨로 설정
+                    
+                    // 검색 결과 마커 표시
+                    const searchMarker = new kakao.maps.Marker({
+                        position: moveLatLng,
+                        map: map
+                    });
+                    
+                    // 정보창 표시
+                    const infoWindow = new kakao.maps.InfoWindow({
+                        content: `
+                            <div style="padding: 10px; text-align: center;">
+                                <strong>${place.place_name}</strong><br>
+                                <small>${place.address_name}</small><br>
+                                <small style="color: #666;">검색 결과</small>
+                            </div>
+                        `
+                    });
+                    
+                    infoWindow.open(map, searchMarker);
+                    
+                    // 3초 후 검색 마커 제거
+                    setTimeout(() => {
+                        searchMarker.setMap(null);
+                        infoWindow.close();
+                    }, 3000);
+                    
+                    status.textContent = `✅ "${place.place_name}" 검색 완료! 지도가 해당 위치로 이동했습니다.`;
+                    status.style.background = '#e8f5e8';
+                    
+                } else {
+                    // 키워드 검색 실패 시 주소 검색 시도
+                    const geocoder = new kakao.maps.services.Geocoder();
+                    
+                    geocoder.addressSearch(query, (result, status_code) => {
+                        if (status_code === kakao.maps.services.Status.OK && result.length > 0) {
+                            const lat = parseFloat(result[0].y);
+                            const lng = parseFloat(result[0].x);
+                            
+                            // 지도 이동
+                            const moveLatLng = new kakao.maps.LatLng(lat, lng);
+                            map.setCenter(moveLatLng);
+                            map.setLevel(3);
+                            
+                            // 검색 결과 마커 표시
+                            const searchMarker = new kakao.maps.Marker({
+                                position: moveLatLng,
+                                map: map
+                            });
+                            
+                            // 정보창 표시
+                            const infoWindow = new kakao.maps.InfoWindow({
+                                content: `
+                                    <div style="padding: 10px; text-align: center;">
+                                        <strong>${result[0].address_name}</strong><br>
+                                        <small style="color: #666;">주소 검색 결과</small>
+                                    </div>
+                                `
+                            });
+                            
+                            infoWindow.open(map, searchMarker);
+                            
+                            // 3초 후 검색 마커 제거
+                            setTimeout(() => {
+                                searchMarker.setMap(null);
+                                infoWindow.close();
+                            }, 3000);
+                            
+                            status.textContent = `✅ "${result[0].address_name}" 검색 완료!`;
+                            status.style.background = '#e8f5e8';
+                            
+                        } else {
+                            status.textContent = `❌ "${query}"에 대한 검색 결과를 찾을 수 없습니다.`;
+                            status.style.background = '#ffebee';
+                        }
+                    });
+                }
+            });
+        }
+
+        // 이벤트 리스너
+        startBtn.addEventListener('click', startCollection);
+        stopBtn.addEventListener('click', stopCollection);
+        clearBtn.addEventListener('click', clearAll);
+        copyBtn.addEventListener('click', copyCoords);
+        searchBtn.addEventListener('click', searchLocation);
+        
+        // 검색창에서 Enter 키 입력 처리
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+
+        // 초기화
+        initMap();
+        updateUI();
+    </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 30px 0 30px;
+  border-bottom: 2px solid #f0f0f0;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.delete-modal-button {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.delete-modal-button:hover {
+  background: #ff5252;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 0 30px 30px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.detail-section {
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.section-title {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin: 0;
+  padding: 15px 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.section-content {
+  padding: 20px;
+  background: #fafbfc;
+}
+
+.prompt-content {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+}
+
+.emotion-content {
+  font-size: 18px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.comfort-content {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #555;
+  font-style: italic;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.music-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.music-item {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e1e5e9;
+}
+
+.music-info {
+  margin-bottom: 8px;
+}
+
+.music-title {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+.music-artist {
+  color: #666;
+  font-size: 14px;
+}
+
+.music-reason {
+  color: #555;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.trails-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trail-item {
+  display: flex;
+  gap: 15px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e1e5e9;
+  align-items: flex-start;
+}
+
+.trail-rank {
+  background: #667eea;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.trail-info {
+  flex: 1;
+}
+
+.trail-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.trail-address {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.trail-score {
+  color: #667eea;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+  
+  .modal-content {
+    max-height: 95vh;
+  }
+  
+  .modal-header {
+    padding: 20px 20px 0 20px;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .modal-title {
+    font-size: 20px;
+  }
+  
+  .modal-actions {
+    align-self: flex-end;
+  }
+  
+  .modal-body {
+    padding: 0 20px 20px 20px;
+    gap: 20px;
+  }
+  
+  .section-title {
+    font-size: 14px;
+    padding: 12px 15px;
+  }
+  
+  .section-content {
+    padding: 15px;
+  }
+  
+  .trail-item {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .trail-rank {
+    align-self: flex-start;
+  }
+}
